@@ -5,13 +5,8 @@
  */
 package com.trinity.oauth.service.impl;
 
-
-//import com.it270.oauth.domain.Authority;
-import com.trinity.commons.security.payload.Profile;
 import com.trinity.oauth.domain.UserAccount;
-import java.util.Collection;
-import java.util.List;
-
+import com.trinity.oauth.repository.UserAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,7 +15,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import com.trinity.oauth.repository.UserAccountRepository;
+
+import java.util.Collection;
 
 @Service
 public class UserDetailServiceImpl implements UserDetailsService {
@@ -38,7 +34,7 @@ public class UserDetailServiceImpl implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException(String.format("User %s does not exist!", userName));
         }
-        
+
         return new UserRepositoryUserDetails(user, null, environment);
     }
 
@@ -69,17 +65,17 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
         @Override
         public boolean isAccountNonExpired() {
-            return user.getAccountExpired();
+            return !user.getAccountExpired();
         }
 
         @Override
         public boolean isAccountNonLocked() {
-            return user.getLocked();
+            return !user.getLocked();
         }
 
         @Override
         public boolean isCredentialsNonExpired() {
-            return user.getCredentialsExpired();
+            return !user.getCredentialsExpired();
         }
 
         @Override
@@ -89,7 +85,7 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
         @Override
         public String getPassword() {
-            return null;
+            return user.getPassword();
         }
 
         @Override
