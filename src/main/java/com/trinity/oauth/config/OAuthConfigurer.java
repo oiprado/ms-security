@@ -1,5 +1,6 @@
 package com.trinity.oauth.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -30,18 +31,17 @@ import javax.sql.DataSource;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @Import(ServerSecurityConfig.class)
 @SessionAttributes("authorizationRequest")
+@Slf4j
 public class OAuthConfigurer extends AuthorizationServerConfigurerAdapter {
 
-    @Autowired
-    @Qualifier("dataSource")
     private DataSource dataSource;
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    @Qualifier("userDetailServiceImpl")
+
     private UserDetailsService userDetailsService;
-    @Autowired
+
+    private AuthenticationManager authenticationManager;
+
     private PasswordEncoder oauthClientPasswordEncoder;
+
     @Bean
     public TokenStore tokenStore() {
         return new JdbcTokenStore(dataSource);
@@ -52,7 +52,15 @@ public class OAuthConfigurer extends AuthorizationServerConfigurerAdapter {
     }
     @Override
     public void configure(AuthorizationServerSecurityConfigurer oauthServer) {
-        oauthServer.tokenKeyAccess("permitAll()").checkTokenAccess("isAuthenticated()").passwordEncoder(oauthClientPasswordEncoder);
+        try{
+
+            oauthServer
+                .tokenKeyAccess("permitAll()")
+                .checkTokenAccess("isAuthenticated()")
+                .passwordEncoder(oauthClientPasswordEncoder);
+        }catch (Exception ex) {
+            log.error(ex.getMessage());
+        }
     }
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
@@ -60,7 +68,35 @@ public class OAuthConfigurer extends AuthorizationServerConfigurerAdapter {
     }
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) {
-        endpoints.tokenStore(tokenStore()).authenticationManager(authenticationManager).userDetailsService(userDetailsService);
+        try{
+
+            endpoints.tokenStore(tokenStore())
+                .authenticationManager(authenticationManager)
+                .userDetailsService(userDetailsService);
+        }catch (Exception ex){
+            log.error(ex.getMessage());
+        }
     }
-    
+
+    @Autowired
+    @Qualifier("dataSource")
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    @Autowired
+    @Qualifier("userDetailServiceImpl")
+    public void setUserDetailsService(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Autowired
+    public void setAuthenticationManager(AuthenticationManager authenticationManager) {
+        this.authenticationManager = authenticationManager;
+    }
+
+    @Autowired
+    public void setOauthClientPasswordEncoder(PasswordEncoder oauthClientPasswordEncoder) {
+        this.oauthClientPasswordEncoder = oauthClientPasswordEncoder;
+    }
 }

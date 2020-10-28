@@ -30,11 +30,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Import(Encoders.class)
 public class ServerSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Autowired
-    @Qualifier("userDetailServiceImpl")
     private UserDetailsService userDetailsService;
-    @Autowired
+
     private PasswordEncoder userPasswordEncoder;
+
     @Override
     @Bean
     public AuthenticationManager authenticationManagerBean() throws Exception {
@@ -43,5 +42,16 @@ public class ServerSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService).passwordEncoder(userPasswordEncoder);
+    }
+
+    @Autowired
+    @Qualifier("userDetailServiceImpl")
+    public void setUserDetailsService(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Autowired
+    public void setUserPasswordEncoder(PasswordEncoder userPasswordEncoder) {
+        this.userPasswordEncoder = userPasswordEncoder;
     }
 }

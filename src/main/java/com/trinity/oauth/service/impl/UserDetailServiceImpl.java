@@ -7,26 +7,28 @@ package com.trinity.oauth.service.impl;
 
 import com.trinity.oauth.domain.UserAccount;
 import com.trinity.oauth.repository.UserAccountRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
 
 @Service
-public class UserDetailServiceImpl implements UserDetailsService {
-    
-    @Autowired
+@Slf4j
+public class UserDetailServiceImpl implements UserDetailsService, Serializable {
+
     private UserAccountRepository userRepository;
-    @Value("${spring.profiles.active}")
-    private String environment;
 
     @Override
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String userName) {
         
         UserAccount user = userRepository.findOneByUserName(userName);
@@ -34,23 +36,23 @@ public class UserDetailServiceImpl implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException(String.format("User %s does not exist!", userName));
         }
+        SimpleGrantedAuthority simpleGrantedAuthority = new SimpleGrantedAuthority(
+                "ROLE_ADMIN"
+        );
 
-        return new UserRepositoryUserDetails(user, null, environment);
+        return new UserRepositoryUserDetails(user, Arrays.asList(simpleGrantedAuthority));
     }
 
-    private final static class UserRepositoryUserDetails implements UserDetails {
+    private  class UserRepositoryUserDetails implements UserDetails, Serializable {
 
         private static final long serialVersionUID = 1L;
         
-        protected Collection<SimpleGrantedAuthority> authorities;
-        protected String environment;
-        protected UserAccount user; 
+        private Collection<SimpleGrantedAuthority> authorities;
+        private UserAccount user;
         
-        private UserRepositoryUserDetails(UserAccount user, Collection<SimpleGrantedAuthority> roles, String environment) {
+        private UserRepositoryUserDetails(UserAccount user, Collection<SimpleGrantedAuthority> roles) {
             this.authorities = roles;
             this.user = user;
-            this.environment = environment;
-            
         }
 
         @Override
@@ -73,10 +75,12 @@ public class UserDetailServiceImpl implements UserDetailsService {
             return !user.getLocked();
         }
 
+
         @Override
         public boolean isCredentialsNonExpired() {
             return !user.getCredentialsExpired();
         }
+
 
         @Override
         public boolean isEnabled() {
@@ -95,4 +99,8 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
     }
 
+    @Autowired
+    public void setUserRepository(UserAccountRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 }
